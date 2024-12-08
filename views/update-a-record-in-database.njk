@@ -24,17 +24,67 @@
   <main>
     <section style="text-align: center;">
       <h2>Update a Record in the Database</h2>
+
+      <!-- Display success or error messages if provided -->
+      {% if successMessage %}
+        <p style="color: green;">{{ successMessage }}</p>
+      {% elif errorMessage %}
+        <p style="color: red;">{{ errorMessage }}</p>
+      {% endif %}
+
+      <!-- Form for updating a record -->
       <form action="/update-a-db-record" method="POST">
+        <!-- Drop-down menu to select a user -->
         <div>
-          <select autofocus name="name" class="select-css">
-            <option selected>Select a user whose password you’d like to update</option>
-              {%- for entry in mongoDBArray -%}
-            <option value="{{ entry.name }}">{{ entry.name }}</option>
-              {%- endfor %}
+          <label for="id">Select a User:</label>
+          <select id="id" name="id" class="select-css" required>
+            <option value="" disabled selected>Select a user to update</option>
+            {%- for entry in mongoDBArray -%}
+            <option value="{{ entry._id }}">{{ entry.name }}</option>
+            {%- endfor %}
           </select>
         </div>
-        <div><input type="password" placeholder="Enter a new password here" name="password"></div>
-        <div><button type="submit">Submit</button></div>
+
+        <!-- Input for the new name -->
+        <div>
+          <label for="name">Name:</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value="{{ user.name }}"
+            placeholder="Enter new name"
+            required>
+        </div>
+
+        <!-- Input for the new email -->
+        <div>
+          <label for="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value="{{ user.email }}"
+            placeholder="Enter new email"
+            required>
+        </div>
+
+        <!-- Input for the new phone -->
+        <div>
+          <label for="phone">Phone:</label>
+          <input
+            type="text"
+            id="phone"
+            name="phone"
+            value="{{ user.phone }}"
+            placeholder="Enter new phone number"
+            required>
+        </div>
+
+        <!-- Submit button -->
+        <div>
+          <button type="submit">Update User</button>
+        </div>
       </form>
     </section>
   </main>

@@ -161,6 +161,38 @@ app.get(`/update-a-db-record`, (req, res) => {
     });
 });
 
+app.post(`/update-a-db-record`, async (req, res) => {
+  try {
+      console.log("Request body:", req.body); // Debugging log
+      const { id, name, email, phone } = req.body;
+
+      // Validate incoming fields
+      if (!id || !name || !email || !phone) {
+          console.log("Missing required fields:", req.body); // Log what's missing
+          return res.status(400).send("Missing required fields.");
+      }
+
+      const updatedData = { name, email, phone };
+
+      // Update the record
+      const result = await db.collection(dbCollection).updateOne(
+          { _id: new mongoDB.ObjectId(id) }, // Convert id to ObjectId
+          { $set: updatedData }
+      );
+
+      if (result.matchedCount === 0) {
+          console.log(`No record found with _id: ${id}`);
+          return res.status(404).send("Record not found.");
+      }
+
+      console.log(`Successfully updated record with _id: ${id}`);
+      res.redirect(`/read-a-db-record`); // Redirect to the page where records are displayed
+  } catch (err) {
+      console.error("Error updating record:", err);
+      res.status(500).send("Internal server error.");
+  }
+});
+
 /*
  * This router handles GET requests to
  * http://localhost:3000/delete-a-db-record/
