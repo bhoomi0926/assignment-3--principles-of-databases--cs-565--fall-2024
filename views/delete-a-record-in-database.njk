@@ -29,13 +29,11 @@
           <select autofocus name="name" class="select-css">
             <option selected>Select a user you’d like to delete</option>
             {%- for entry in mongoDBArray -%}
-              <option value="{{ entry.name }}">{{ entry.name }}</option>
+            <option value="{{ entry.name }}">{{ entry.name }}</option>
             {%- endfor %}
           </select>
         </div>
-        <div>
-          <button type="submit">Submit</button>
-        </div>
+        <div><button type="submit">Submit</button></div>
       </form>
     </section>
   </main>
