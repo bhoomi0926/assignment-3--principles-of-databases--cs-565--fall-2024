@@ -29,8 +29,8 @@ nunjucks.configure(`views`, {
 });
 
 /*
- * Configure the Node MongoDB client to connect to Mongo, established a database
- * connection and assigning the reference to the “db” variable defined on line
+ * Configure the Node MongoDB client to connect to Mongo, establish a database
+ * connection, and assign the reference to the “db” variable defined on line
  * 21
  */
 mongoClient.connect(`${dbURL}:${dbPort}`, (err, client) => {
@@ -81,12 +81,6 @@ app.use(bodyParser.json());
 app.use(express.static(`public`));
 
 /*
- * Note:
- *   — “req” stands for requests, which arrive from the client/browser
- *   — “res” stands for responses, which are sent to the client/browser
- */
-
-/*
  * This router handles GET requests to the root of the web site
  */
 app.get(`/`, (req, res) => {
@@ -111,8 +105,7 @@ app.get(`/read-a-db-record`, (req, res) => {
 });
 
 /*
- * This router handles GET requests to
- * http://localhost:3000/create-a-db-record/
+ * This router handles GET requests to http://localhost:3000/create-a-db-record/
  */
 app.get(`/create-a-db-record`, (req, res) => {
     res.render(`create-a-record-in-database.njk`);
@@ -137,8 +130,7 @@ app.post(`/create-a-db-record`, (req, res) => {
 });
 
 /*
- * This router handles GET requests to
- * http://localhost:3000/update-a-db-record/
+ * This router handles GET requests to http://localhost:3000/update-a-db-record/
  */
 app.get(`/update-a-db-record`, (req, res) => {
     db.collection(dbCollection).find().toArray((err, arrayObject) => {
@@ -152,30 +144,31 @@ app.get(`/update-a-db-record`, (req, res) => {
 });
 
 /*
- * This router handles POST requests to update a record
+ * This router handles POST requests for updating records
  */
 app.post(`/update-a-db-record`, (req, res) => {
     db.collection(dbCollection).updateOne(
-        { _id: new mongoDB.ObjectId(req.body.id) },
-        { $set: { name: req.body.name, password: req.body.password } },
+        { name: req.body.name },
+        {
+            $set: {
+                password: req.body.password
+            }
+        },
         (err, result) => {
             if (err) {
                 console.log(`${colors.red}UPDATE POST: Error = `, err);
             } else {
-                if (result.matchedCount > 0) {
-                    console.log(`${colors.green}UPDATE POST: Successfully updated user with ID ${req.body.id}`);
-                } else {
-                    console.log(`${colors.yellow}UPDATE POST: No user found with ID ${req.body.id}`);
+                if (result.acknowledged) {
+                    console.log(`${colors.green}UPDATE POST: Updated User ${req.body.name}'s password`);
                 }
             }
-            res.redirect(`/read-a-db-record`);
         }
     );
+    res.redirect(`/update-a-db-record`);
 });
 
 /*
- * This router handles GET requests to
- * http://localhost:3000/delete-a-db-record/
+ * This router handles GET requests to http://localhost:3000/delete-a-db-record/
  */
 app.get(`/delete-a-db-record`, (req, res) => {
     db.collection(dbCollection).find().toArray((err, arrayObject) => {
@@ -184,17 +177,26 @@ app.get(`/delete-a-db-record`, (req, res) => {
 });
 
 /*
- * This router handles POST requests to delete a record
+ * This router handles POST requests to delete records
  */
 app.post(`/delete-a-db-record`, (req, res) => {
-    db.collection(dbCollection).deleteOne({ name: req.body.name }, (err, result) => {
+    db.collection(dbCollection).findOne({ name: req.body.name }, (err, result) => {
         if (err) {
             console.log(`${colors.red}DELETE POST: Error = `, err);
         } else {
-            if (result.acknowledged) {
-                console.log(`${colors.green}DELETE POST: Deleted ${result.deletedCount} User(s) named ${req.body.name}`);
+            if (result) {
+                console.log(`${colors.green}DELETE POST: Found user ${req.body.name}, proceeding with deletion.`);
+                db.collection(dbCollection).deleteOne(req.body, (err, result) => {
+                    if (err) {
+                        console.log(`${colors.red}DELETE POST: Error during deletion = `, err);
+                    } else {
+                        console.log(`${colors.green}DELETE POST: Successfully deleted user ${req.body.name}`);
+                    }
+                });
+            } else {
+                console.log(`${colors.red}DELETE POST: User ${req.body.name} not found`);
             }
         }
-        res.redirect(`/delete-a-db-record`);
     });
+    res.redirect("/delete-a-db-record");
 });
