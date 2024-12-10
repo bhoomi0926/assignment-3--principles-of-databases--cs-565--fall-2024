@@ -79,12 +79,6 @@ app.use(bodyParser.json());
 app.use(express.static(`public`));
 
 /*
- * Note:
- *   — “req” stands for requests, which arrive from the client/browser
- *   — “res” stands for responses, which are sent to the client/browser
- */
-
-/*
  * This router handles GET requests to the root of the web site
  */
 app.get(`/`, (req, res) => {
@@ -168,13 +162,11 @@ app.post(`/update-a-db-record`, (req, res) => {
     console.log(`Received update request for user with ID: ${id}`);
     console.log(`New values - Name: ${name}, Password: ${password}`);
 
-    // Convert the ID from string to ObjectId
     const objectId = new mongoDB.ObjectId(id);
 
-    // Update the user record in the MongoDB collection
     db.collection(dbCollection).updateOne(
-        { _id: objectId }, // Filter by the user's _id
-        { $set: { name, password } }, // Fields to update
+        { _id: objectId },
+        { $set: { name, password } },
         (err, result) => {
             if (err) {
                 console.log(`${colors.red}Error updating record:`, err, colors.reset);
@@ -185,7 +177,6 @@ app.post(`/update-a-db-record`, (req, res) => {
                 `${colors.green}Successfully updated record with ID: ${id}.${colors.reset}\n`
             );
 
-            // Redirect to the read route to display updated data
             res.redirect(`/read-a-db-record`);
         }
     );
@@ -200,4 +191,34 @@ app.get(`/delete-a-db-record`, (req, res) => {
         res.render(`delete-a-record-in-database.njk`,
             { mongoDBArray: arrayObject });
     });
+});
+
+/*
+ * This router handles POST requests to
+ * http://localhost:3000/delete-a-db-record/
+ */
+app.post(`/delete-a-db-record`, (req, res) => {
+    const { id, name } = req.body;
+
+    console.log(`Received delete request for user with ID: ${id}`);
+
+    const objectId = new mongoDB.ObjectId(id);
+
+    db.collection(dbCollection).deleteOne(
+        { _id: objectId },
+        (err, result) => {
+            if (err) {
+                console.log(`${colors.red}Error deleting record:`, err, colors.reset);
+                return res.status(500).send('Error deleting record');
+            } else {
+                if (result.acknowledged) {
+                    console.log(
+                        `${colors.green}DELETE POST: Successfully Deleted User ${name}.${colors.reset}`
+                    );
+                }
+            }
+        }
+    );
+
+    res.redirect(`/delete-a-db-record`);
 });
