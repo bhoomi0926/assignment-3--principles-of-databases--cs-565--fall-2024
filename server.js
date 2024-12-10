@@ -160,6 +160,8 @@ app.post(`/update-a-db-record`, (req, res) => {
             } else {
                 if (result.acknowledged) {
                     console.log(`${colors.green}UPDATE POST: Updated User ${req.body.name}'s password`);
+                } else {
+                    console.log(`${colors.red}UPDATE POST: Unsuccessful`);
                 }
             }
         }
@@ -190,7 +192,11 @@ app.post(`/delete-a-db-record`, (req, res) => {
                     if (err) {
                         console.log(`${colors.red}DELETE POST: Error during deletion = `, err);
                     } else {
-                        console.log(`${colors.green}DELETE POST: Successfully deleted user ${req.body.name}`);
+                        if (result.acknowledged) {
+                            console.log(`${colors.green}DELETE POST: Deleted ${result.deletedCount} User${result.deletedCount > 1 ? 's' : ''} Name ${req.body.name}`);
+                        } else {
+                            console.log(`${colors.red}DELETE POST: Unsuccessful`);
+                        }
                     }
                 });
             } else {
