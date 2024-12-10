@@ -29,8 +29,9 @@ nunjucks.configure(`views`, {
 });
 
 /*
- * Configure the Node MongoDB client to connect to Mongo, establish a database
- * connection, and assign the reference to the “db” variable
+ * Configure the Node MongoDB client to connect to Mongo, established a database
+ * connection and assigning the reference to the “db” variable defined on line
+ * 21
  */
 mongoClient.connect(`${dbURL}:${dbPort}`, (err, client) => {
     if (err) {
@@ -74,18 +75,23 @@ app.use(bodyParser.json());
 
 /*
  * Express’s middleware to serve HTML, CSS, and JavaScript files from the
- * included “public” folder
+ * included “public” folder. Note: There are no JavaScript files in the
+ * “public” folder
  */
 app.use(express.static(`public`));
+
+/*
+ * Note:
+ *   — “req” stands for requests, which arrive from the client/browser
+ *   — “res” stands for responses, which are sent to the client/browser
+ */
 
 /*
  * This router handles GET requests to the root of the web site
  */
 app.get(`/`, (req, res) => {
     console.log(`User requested root of web site.`);
-    console.log(`Responding to request with file`,
-        colors.green, `index.njk`, colors.reset, `via GET.`);
-
+    console.log(`Responding to request with file`, colors.green, `index.njk`, colors.reset, `via GET.`);
     res.render(`index.njk`);
 });
 
@@ -98,9 +104,7 @@ app.get(`/read-a-db-record`, (req, res) => {
             return console.log(err);
         } else {
             console.log(`User requested http://${HOST}:${port}/read-a-db-record.`);
-            console.log(`Responding to request with file`,
-                colors.green, `read-from-database.njk`, colors.reset, `via GET.\n`);
-
+            console.log(`Responding to request with file`, colors.green, `read-from-database.njk`, colors.reset, `via GET.\n`);
             res.render(`read-from-database.njk`, { mongoDBArray: arrayObject });
         }
     });
@@ -126,9 +130,7 @@ app.post(`/create-a-db-record`, (req, res) => {
         if (err) {
             return console.log(err);
         } else {
-            console.log(
-                `Inserted one record into Mongo via an HTML form using POST.\n`);
-
+            console.log(`Inserted one record into Mongo via an HTML form using POST.\n`);
             res.redirect(`/read-a-db-record`);
         }
     });
@@ -143,40 +145,29 @@ app.get(`/update-a-db-record`, (req, res) => {
         if (err) {
             return console.log(err);
         } else {
-            console.log(`User requested the resource ` +
-                `http://${HOST}:${port}/update-a-db-record`);
-
-            res.render(`update-a-record-in-database.njk`,
-                { mongoDBArray: arrayObject });
+            console.log(`User requested the resource http://${HOST}:${port}/update-a-db-record`);
+            res.render(`update-a-record-in-database.njk`, { mongoDBArray: arrayObject });
         }
     });
 });
 
 /*
- * This router handles POST requests to
- * http://localhost:3000/update-a-db-record/
+ * This router handles POST requests to update a record
  */
 app.post(`/update-a-db-record`, (req, res) => {
-    const { id, name, password } = req.body;
-
-    console.log(`Received update request for user with ID: ${id}`);
-    console.log(`New values - Name: ${name}, Password: ${password}`);
-
-    const objectId = new mongoDB.ObjectId(id);
-
     db.collection(dbCollection).updateOne(
-        { _id: objectId },
-        { $set: { name, password } },
+        { _id: new mongoDB.ObjectId(req.body.id) },
+        { $set: { name: req.body.name, password: req.body.password } },
         (err, result) => {
             if (err) {
-                console.log(`${colors.red}Error updating record:`, err, colors.reset);
-                return res.status(500).send('Error updating record');
+                console.log(`${colors.red}UPDATE POST: Error = `, err);
+            } else {
+                if (result.matchedCount > 0) {
+                    console.log(`${colors.green}UPDATE POST: Successfully updated user with ID ${req.body.id}`);
+                } else {
+                    console.log(`${colors.yellow}UPDATE POST: No user found with ID ${req.body.id}`);
+                }
             }
-
-            console.log(
-                `${colors.green}Successfully updated record with ID: ${id}.${colors.reset}\n`
-            );
-
             res.redirect(`/read-a-db-record`);
         }
     );
@@ -188,37 +179,22 @@ app.post(`/update-a-db-record`, (req, res) => {
  */
 app.get(`/delete-a-db-record`, (req, res) => {
     db.collection(dbCollection).find().toArray((err, arrayObject) => {
-        res.render(`delete-a-record-in-database.njk`,
-            { mongoDBArray: arrayObject });
+        res.render(`delete-a-record-in-database.njk`, { mongoDBArray: arrayObject });
     });
 });
 
 /*
- * This router handles POST requests to
- * http://localhost:3000/delete-a-db-record/
+ * This router handles POST requests to delete a record
  */
 app.post(`/delete-a-db-record`, (req, res) => {
-    const { id, name } = req.body;
-
-    console.log(`Received delete request for user with ID: ${id}`);
-
-    const objectId = new mongoDB.ObjectId(id);
-
-    db.collection(dbCollection).deleteOne(
-        { _id: objectId },
-        (err, result) => {
-            if (err) {
-                console.log(`${colors.red}Error deleting record:`, err, colors.reset);
-                return res.status(500).send('Error deleting record');
-            } else {
-                if (result.acknowledged) {
-                    console.log(
-                        `${colors.green}DELETE POST: Successfully Deleted User ${name}.${colors.reset}`
-                    );
-                }
+    db.collection(dbCollection).deleteOne({ name: req.body.name }, (err, result) => {
+        if (err) {
+            console.log(`${colors.red}DELETE POST: Error = `, err);
+        } else {
+            if (result.acknowledged) {
+                console.log(`${colors.green}DELETE POST: Deleted ${result.deletedCount} User(s) named ${req.body.name}`);
             }
         }
-    );
-
-    res.redirect(`/delete-a-db-record`);
+        res.redirect(`/delete-a-db-record`);
+    });
 });
